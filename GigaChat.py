@@ -45,7 +45,7 @@ def get_chat_completion(message):
         "top_p": 0.1,
         "n": 1,
         "stream": False,
-        "max_tokens": 200,
+        "max_tokens": 300,
         "repetition_penalty": 1,
         "update_interval": 0
     })
