@@ -1,6 +1,5 @@
 import settings
 import requests
-import json
 import time
 
 
@@ -16,13 +15,13 @@ class Tokenizer:
     RqUID = "07e173e8-6b39-45d7-8021-06b8db7dd0cc"
     URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
 
-    def __init__(self, config: settings.Config, last_time: int = 0):
-        self.last_time = last_time
+    def __init__(self, config: settings.Config):
+        self.last_time = 0
         self.config = config
         self._token: str | None = None
 
     @property
-    def expired(self):
+    def expired(self) -> bool:
         return (self.last_time + 1500) < time.time()
 
     @property
@@ -37,11 +36,11 @@ class Tokenizer:
             'Content-Type': 'application/x-www-form-urlencoded',
             'Accept': 'application/json',
             'RqUID': self.RqUID,
-            'Authorization': f"Basic {self.config.authorization}"
+            'Authorization': f"Basic {self.config.gigachat_api_key}"
         }
 
         response = requests.post(
-            self.config.url1,
+            self.URL,
             headers=headers,
             data=self.PAYLOAD,
             verify=False,
@@ -57,7 +56,6 @@ class LLM:
                  temperature: float = 1.) -> None:
         self.tokenizer = Tokenizer(config)
         self.temperature: float = temperature
-        self.url = config.url2
 
     def get_chat_completion(self, prompt: str) -> str | None:
 
@@ -81,6 +79,13 @@ class LLM:
             'Accept': 'application/json',
             'Authorization': f'Bearer {self.tokenizer.token}'
         }
-        answer = requests.post(self.url, headers=headers, data=payload, verify=False)
-        return answer.json()["choices"][0]["message"]["content"]
+
+        response = requests.post(
+            self.URL,
+            headers=headers,
+            data=payload,
+            verify=False,
+        )
+
+        return response.json()["choices"][0]["message"]["content"] if response.ok else None
 
