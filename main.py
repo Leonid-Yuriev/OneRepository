@@ -22,11 +22,14 @@ def welcome(message: Message) -> None:
 @bot.message_handler(func=lambda message: True)
 def user_question(message: Message) -> Message:
     answer = llm.get_chat_completion(message.text)
-    return bot.send_message(message.chat.id, answer)
+    if answer:
+        return bot.send_message(message.chat.id, answer)
+    return bot.send_message(message.chat.id, "Произошла ошибка :(")
 
 
 def main() -> None:
-    return bot.infinity_polling(True)
+    print("Запуск бота")
+    return bot.polling(True)
 
 
 if __name__ == '__main__':

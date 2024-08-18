@@ -1,3 +1,7 @@
+import json
+import uuid
+from pprint import pprint
+
 import settings
 import requests
 import time
@@ -12,7 +16,6 @@ class Tokenizer:
         last_time (int): Время последнего изменения токена
     """
     PAYLOAD = {'scope': 'GIGACHAT_API_PERS'}
-    RqUID = "07e173e8-6b39-45d7-8021-06b8db7dd0cc"
     URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
 
     def __init__(self, config: settings.Config):
@@ -35,7 +38,7 @@ class Tokenizer:
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Accept': 'application/json',
-            'RqUID': self.RqUID,
+            'RqUID': str(uuid.uuid4()),
             'Authorization': f"Basic {self.config.gigachat_api_key}"
         }
 
@@ -44,21 +47,22 @@ class Tokenizer:
             headers=headers,
             data=self.PAYLOAD,
             verify=False,
-        )
+        ).json()
 
-        return response.json().get("access_token")
+        self.expires_at = response.get("expires_at")
+
+        return response.get("access_token")
 
 
 class LLM:
     URL = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
 
     def __init__(self, config: settings.Config,
-                 temperature: float = 1.) -> None:
+                 temperature: float = 1) -> None:
         self.tokenizer = Tokenizer(config)
         self.temperature: float = temperature
 
     def get_chat_completion(self, prompt: str) -> str | None:
-
         payload = {
             "model": "GigaChat",
             "messages": [{
@@ -83,9 +87,13 @@ class LLM:
         response = requests.post(
             self.URL,
             headers=headers,
-            data=payload,
+            json=payload,
             verify=False,
         )
+
+        if response.ok:
+            return response.json()["choices"][0]["message"]["content"]
+        print(f"Произошла ошибка {response.status_code} во время получения ответа от GigaChat: {response.content}. \n{response.request.body}")
 
         return response.json()["choices"][0]["message"]["content"] if response.ok else None
 
