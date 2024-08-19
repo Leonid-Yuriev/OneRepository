@@ -1,12 +1,21 @@
 import os
+from dataclasses import dataclass
+
 import dotenv
+
 
 dotenv.load_dotenv('.env')
 
-tg_token = os.environ['tg_token']
-url2 = os.environ['url2']
-url1 = os.environ['url1']
-authorization = os.environ['authorization']
-accept = os.environ['accept']
-content_type = os.environ['content_type']
 
+@dataclass
+class Config:
+    tg_token: str
+    gigachat_api_key: str
+
+
+def load_config() -> Config:
+
+    return Config(
+        tg_token=os.getenv('TG_TOKEN'),
+        gigachat_api_key=os.getenv('GIGACHAT_API_KEY'),
+    )
